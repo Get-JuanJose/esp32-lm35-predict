@@ -4,19 +4,35 @@ import machine
 import random
 import time
 import utime
-import connect as c
+import socket
 
 class cloudData:
-    c = c.connect()
-    def __init__(self):
-        self.list=[]
-        self.pinMotor = machine.Pin(5, machine.Pin.OUT)
+    def __init__(self, n):
+        self.listX=[]
+        self.listY=[]
+        self.ssid = 'CLARO_WIFI710'
+        self.password = 'CLAROI710'
+
+        self.sta_if = network.WLAN(network.STA_IF)
+        self.sta_if.active(True)
+        self.sta_if.connect(self.ssid, self.password)
+        while not self.sta_if.isconnected():
+            pass
+        print('Conectado a la red Wi-Fi desde connect class')
+        print('Dirección IP:', self.sta_if.ifconfig()[0])
+        self.pinMotor = machine.Pin(23, machine.Pin.OUT)
 
     def setListLabelX(self, lista):
-        self.list = lista
+        self.listX = lista
     
     def getListLabelX(self):
-        return self.list
+        return self.listX
+    
+    def setListLabelY(self, lista):
+        self.listY = lista
+    
+    def getListLabelY(self):
+        return self.listY
     
     def now(self, e):
         i=0
@@ -30,9 +46,51 @@ class cloudData:
                     tiempo += str(elemento)
             i = i+1
         return tiempo
+    
+    def webServer(self):
+        listX = self.getListLabelX()
+        listY = self.getListLabelY()
+     
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = ('', 80)  
+        server_socket.bind(server_address)
+
+        server_socket.listen(1)
+        print('Servidor web listo para recibir conexiones')
+
+        while True:
+            print('Esperando una nueva conexión...')
+            client_socket, client_address = server_socket.accept()
+            print('Conexión establecida desde:', client_address)
+
+            request = client_socket.recv(4096).decode()
+            print('Solicitud recibida:')
+            print(request)
+
+            response = 'HTTP/1.1 200 OK\nContent-Type: text/html\n\n\n'
+            response += '<head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous"><title>Time VS Temperature</title></head><body><h1 class="text-center mt-5 mb-5 text-primary">Time VS Temperature</h1><div class="container"><div class="card"><div class="card-body"><table class="table table-bordered"><thead><th scope="col">Time (HH:MM:SS)</th><th scope="col">Temperature (°C)</th><th scope="col">ON/OFF</th></thead><tbody>\n'
+            i=1
+            for elementoX, elementoY in zip(listX, listY):
+                if (i % 4 == 0):
+                    response += '<tr style="background-color:salmon">\n'
+                    if (elementoY >= 22.3):
+                        response += '<td>{}</td><td>{}</td>\n'.format(elementoX, elementoY)
+                        response += '<td>ON</td>\n'
+                    else:
+                        response += '<td>{}</td><td>{}</td>\n'.format(elementoX, elementoY)
+                        response += '<td>OFF</td>\n'
+                else:
+                    response += '<tr>\n'
+                    response += '<td>{}</td><td>{}</td>\n'.format(elementoX, elementoY)
+                response += '</tr>'
+                i = i+1
+                
+            response += '</tbody></table></div></div></div></body>\n'
+            client_socket.sendall(response.encode())
+            client_socket.close()
 
     def loadData(self):
-        for k in range(5):
+        for k in range(1):
             with open("data.csv", "r+") as file:
                 x=[]
                 y=[]
@@ -73,11 +131,11 @@ class cloudData:
 
                 x.pop(0)
 
-                xUnico = []
+                listX = []
                 for elemento in x:
-                    xUnico.extend(elemento)
+                    listX.extend(elemento)
                 
-                self.setListLabelX(xUnico)
+                self.setListLabelX(listX)
                 file.close()
                 
                 with open("data.csv", "r+") as file:
@@ -89,8 +147,9 @@ class cloudData:
                                 
                     y.pop(0)
                     
-                    intList = [(float(elemento)) for elemento in y]
-                    predict = sum(intList)/len(intList)
+                    listY = [(float(elemento)) for elemento in y]
+                    
+                    predict = sum(listY)/len(listY)
                     print("predict:", predict)
                     
                     hora = utime.localtime()
@@ -99,18 +158,21 @@ class cloudData:
                     file.write(str(now))
                     file.write(",")
                     file.write(str(predict))
-                    intList.append(predict)
-                    xUnico.append(now)
-                    self.setListLabelX(xUnico)
-
+                    listY.append(predict)
+                    listX.append(now)
+                    self.setListLabelX(listX)
+                    self.setListLabelY(listY)
+                    
                     if(predict>=22.3):
                         ledPin = machine.Pin(2, machine.Pin.OUT)  
                         ledPin.on()
                         self.pinMotor.value(1)
                         utime.sleep(5)
+                        ledPin.off()
+                        self.pinMotor.value(0)
                         
-
                 file.close()
-
-        return intList
-
+    
+test = cloudData(5)
+test.loadData()
+test.webServer()

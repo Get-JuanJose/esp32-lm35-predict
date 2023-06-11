@@ -2,8 +2,8 @@ import network
 
 class connect:
     def __init__(self):
-        self.ssid = ''
-        self.password = ''
+        self.ssid = 'CLARO_WIFI710'
+        self.password = 'CLAROI710'
 
         self.sta_if = network.WLAN(network.STA_IF)
         self.sta_if.active(True)
@@ -16,3 +16,6 @@ class connect:
 
     def getIp(self):
         return self.sta_if.ifconfig()[0]
+
+a = connect()
+print(a.getIp())

@@ -1,8 +1,8 @@
 import socket
-import connect as c
+import network
 import cloudData as cd
 
-cd = cd.cloudData()
+objeto = cd.cloudData()
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -12,10 +12,12 @@ server_socket.bind(server_address)
 server_socket.listen(1)
 print('Servidor web listo para recibir conexiones')
 
-listY = cd.loadData()
-listX = cd.getListLabelX()
-print("y:", listY)
-print("x:", cd.getListLabelX())
+#listY = cd.loadData()
+#listX = cd.getListLabelX()
+listY = [1,2,3,4,5]
+listX = [6,7,8,9,10]
+#print("y:", listY)
+#print("x:", cd.getListLabelX())
 
 while True:
     print('Esperando una nueva conexión...')
@@ -42,4 +44,3 @@ while True:
     response += '</tbody></table></div></div></div></body>\n'
     client_socket.sendall(response.encode())
     client_socket.close()
-
