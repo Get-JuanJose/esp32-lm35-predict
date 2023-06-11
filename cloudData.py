@@ -10,8 +10,8 @@ class cloudData:
     def __init__(self, n):
         self.listX=[]
         self.listY=[]
-        self.ssid = 'CLARO_WIFI710'
-        self.password = 'CLAROI710'
+        self.ssid = ''
+        self.password = ''
 
         self.sta_if = network.WLAN(network.STA_IF)
         self.sta_if.active(True)
