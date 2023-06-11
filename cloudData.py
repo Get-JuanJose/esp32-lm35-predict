@@ -7,7 +7,7 @@ import utime
 import socket
 
 class cloudData:
-    def __init__(self, n):
+    def __init__(self):
         self.listX=[]
         self.listY=[]
         self.ssid = ''
@@ -90,10 +90,11 @@ class cloudData:
             client_socket.close()
 
     def loadData(self):
-        for k in range(1):
+        x=[]
+        y=[]
+        for k in range(0,3):
             with open("data.csv", "r+") as file:
-                x=[]
-                y=[]
+                
                 file.write("time")
                 file.write(",")
                 file.write("temperatura")
@@ -103,7 +104,6 @@ class cloudData:
                     hora = utime.localtime()
                     now = self.now(hora)
                     temp = random.uniform(22,23)
-                    print(temp)
             
                     url = "https://api.thingspeak.com/update?api_key=QF7FU9H41G6SWWX5&afield1={:.2s}&field2={:.2f}".format(now, temp)
                     response = urequests.get(url)
@@ -112,7 +112,8 @@ class cloudData:
                     else:
                         print("Error al enviar los datos a ThingSpeak:", response.status_code)
                     print("temperatura", temp)
-                        
+                  
+    
                     try:
                         file.write("\n")
                         file.write(str(now))
@@ -121,58 +122,32 @@ class cloudData:
                         response.close()
                     except Exception as e:
                         raise
-                file.close()
+                    x.append(now)
+                    y.append(temp)
+                    
+                y = [(float(elemento)) for elemento in y]
                 
-                file=open("data.csv", "r")
-                for linea in file:
-                    columnas = linea.strip().split(",")
-                    time=[columnas[0]]
-                    x.append(time)
-
-                x.pop(0)
-
-                listX = []
-                for elemento in x:
-                    listX.extend(elemento)
+                predict = sum(y)/len(y)
+                print("predict:", predict)
                 
-                self.setListLabelX(listX)
-                file.close()
+                hora = utime.localtime()
+                now = self.now(hora)
                 
-                with open("data.csv", "r+") as file:
-                    for lineas in file:
-                        columnas = lineas.strip().split(",")
-                        if len(columnas) > 1:  
-                            temperature = columnas[1]
-                            y.append(temperature)
-                                
-                    y.pop(0)
-                    
-                    listY = [(float(elemento)) for elemento in y]
-                    
-                    predict = sum(listY)/len(listY)
-                    print("predict:", predict)
-                    
-                    hora = utime.localtime()
-                    now = self.now(hora)
-                    file.write("\n")
-                    file.write(str(now))
-                    file.write(",")
-                    file.write(str(predict))
-                    listY.append(predict)
-                    listX.append(now)
-                    self.setListLabelX(listX)
-                    self.setListLabelY(listY)
-                    
-                    if(predict>=22.3):
-                        ledPin = machine.Pin(2, machine.Pin.OUT)  
-                        ledPin.on()
-                        self.pinMotor.value(1)
-                        utime.sleep(5)
-                        ledPin.off()
-                        self.pinMotor.value(0)
-                        
-                file.close()
+                y.append(predict)
+                x.append(now)
+                
+      
+                if(predict>=22.3):
+                    ledPin = machine.Pin(2, machine.Pin.OUT)  
+                    ledPin.on()
+                    self.pinMotor.value(1)
+                    utime.sleep(5)
+                    ledPin.off()
+                    self.pinMotor.value(0)
+        
+        self.setListLabelX(x)
+        self.setListLabelY(y)   
     
-test = cloudData(5)
+test = cloudData()
 test.loadData()
 test.webServer()
