@@ -10,8 +10,8 @@ class cloudData:
     def __init__(self):
         self.listX=[]
         self.listY=[]
-        self.ssid = ''
-        self.password = ''
+        self.ssid = 'CLARO_WIFI710'
+        self.password = 'CLAROI710'
 
         self.sta_if = network.WLAN(network.STA_IF)
         self.sta_if.active(True)
@@ -21,6 +21,7 @@ class cloudData:
         print('Conectado a la red Wi-Fi desde connect class')
         print('Dirección IP:', self.sta_if.ifconfig()[0])
         self.pinMotor = machine.Pin(23, machine.Pin.OUT)
+    
 
     def setListLabelX(self, lista):
         self.listX = lista
@@ -104,6 +105,9 @@ class cloudData:
                     hora = utime.localtime()
                     now = self.now(hora)
                     temp = random.uniform(22,23)
+                    #adc = machine.ADC(machine.Pin(15))
+                    #voltaje = adc.read()*(5/4095)
+                    #temp = 8+((voltaje)/0.1)
             
                     url = "https://api.thingspeak.com/update?api_key=QF7FU9H41G6SWWX5&afield1={:.2s}&field2={:.2f}".format(now, temp)
                     response = urequests.get(url)
@@ -151,3 +155,5 @@ class cloudData:
 test = cloudData()
 test.loadData()
 test.webServer()
+
+
